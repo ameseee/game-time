@@ -101,13 +101,10 @@
 	});
 
 	canvas.addEventListener('click', () => {
-	  console.log('hey');
 	  if (paddle.ammo > 0 && ball.moveY !== 0) {
-	    console.log('up');
 	    bulletArray.push(new Bullet(paddle.x + paddle.width / 2, paddle.y));
 	    paddle.ammo--;
 	  }
-	  console.log(paddle.ammo, ball.moveY);
 	  ball.initiateVelocity();
 	});
 
@@ -424,6 +421,14 @@
 	    return buffer;
 	  }
 
+	  assignSpecialBlocks(array, number) {
+	    for (var i = 0; i < number; i++) {
+	      if (array[i].unbreakable === false) {
+	        array[i].special = true;
+	      }
+	    }
+	  }
+
 	  buildLevelOne() {
 	    let levelOneArray = [];
 
@@ -559,14 +564,6 @@
 	    return levelFourArray;
 	  }
 
-	  assignSpecialBlocks(array, number) {
-	    for (var i = 0; i < number; i++) {
-	      if (array[i].unbreakable === false) {
-	        array[i].special = true;
-	      }
-	    }
-	  }
-
 	  buildBlock(array, context) {
 	    for (let i = 0; i < array.length; i++) {
 	      array[i].draw(context);
@@ -657,7 +654,16 @@
 	    for (var i = 0; i < blockArray.length; i++) {
 	      for (var j = 0; j < bulletArray.length; j++) {
 	        if (bulletArray[j].y + bulletArray[j].radius >= blockArray[i].y && bulletArray[j].y - bulletArray[j].radius <= blockArray[i].y + blockArray[i].height && bulletArray[j].x - bulletArray[j].radius <= blockArray[i].x + blockArray[i].width && bulletArray[j].x + bulletArray[j].radius >= blockArray[i].x) {
-	          if (blockArray[i].unbreakable === false) {
+	          if (blockArray[i].special === true) {
+	            console.log(i);
+	            powerupArray.push(new Powerup(blockArray[i].x + 5, blockArray[i].y));
+	            game.points += 15;
+	            this.updatePointsInfoBar(game);
+	            document.getElementById('special-bounce-sound').volume = 0.8;
+	            document.getElementById('special-bounce-sound').play();
+	            blockArray.splice(i, 1);
+	            bulletArray[j].y = -100;
+	          } else if (blockArray[i].unbreakable === false) {
 	            game.points += 10;
 	            this.updatePointsInfoBar(game);
 	            document.getElementById('normal-bounce-sound').volume = 0.5;
@@ -665,16 +671,6 @@
 	            blockArray.splice(i, 1);
 	            bulletArray[j].y = -100;
 	          } else {
-	            bulletArray[j].y = -100;
-	          }
-	          if (blockArray[i].special === true) {
-	            console.log('bul block');
-	            powerupArray.push(new Powerup(blockArray[i].x + 5, blockArray[i].y));
-	            game.points += 15;
-	            this.updatePointsInfoBar(game);
-	            document.getElementById('special-bounce-sound').volume = 0.8;
-	            document.getElementById('special-bounce-sound').play();
-	            blockArray.splice(i, 1);
 	            bulletArray[j].y = -100;
 	          }
 	        }
@@ -784,14 +780,17 @@
 	    } else {
 	      this.currentPowerupAlpha = 1;
 	      this.currentTextSize = 1;
-	      this.currentPowerup = 'Click to shoot missles';
+	      this.currentPowerup = 'Shoot missles';
 	      paddle.activateShoot();
 	    }
 	  }
 
 	  drawPowerupText(context) {
 	    let decrementer = .01;
-	    console.log(this.currentTextSize);
+	    if (this.currentTextSize >= 150) {
+	      this.currentTextSize = 0;
+	      this.currentPowerupAlpha = 0;
+	    }
 	    this.currentTextSize += decrementer * 100;
 	    context.font = `${this.currentTextSize}px Ubuntu`;
 	    context.textAlign = 'center';
@@ -832,7 +831,7 @@
 	    super(x, y);
 	    this.width = 50;
 	    this.height = 12;
-	    this.ammo = 3;
+	    this.ammo = 0;
 	  }
 
 	  draw(context) {
